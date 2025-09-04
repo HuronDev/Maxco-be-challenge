@@ -110,4 +110,104 @@ export class VentasService {
     await this.prisma.detalleVenta.deleteMany({ where: { ventaId: id } });
     return this.prisma.venta.delete({ where: { id } });
   }
+
+  // specific methods
+
+  async zonasConMasVentasPorVendedor() {
+    const grupos = await this.prisma.venta.groupBy({
+      by: ['vendedorId', 'zonaId'],
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+    });
+
+    const resultados = await Promise.all(
+      grupos.map(async (g) => {
+        const vendedor = await this.prisma.vendedor.findUnique({
+          where: { id: g.vendedorId },
+        });
+        const zona = await this.prisma.zona.findUnique({
+          where: { id: g.zonaId },
+        });
+
+        return {
+          vendedor: vendedor?.nombre || 'Desconocido',
+          zona: zona?.nombre || 'Desconocida',
+          totalVentas: g._count.id,
+        };
+      }),
+    );
+
+    return resultados;
+  }
+
+  async zonasSinVentas(fechaInicio: string, fechaFin: string) {
+    const zonas = await this.prisma.zona.findMany({
+      where: {
+        ventas: {
+          none: {
+            fecha: {
+              gte: new Date(fechaInicio),
+              lte: new Date(fechaFin),
+            },
+          },
+        },
+      },
+    });
+
+    return zonas;
+  }
+
+  async vendedoresSinVentas(fechaInicio: string, fechaFin: string) {
+    const ventas = await this.prisma.venta.findMany({
+      where: {
+        fecha: {
+          gte: new Date(fechaInicio),
+          lte: new Date(fechaFin),
+        },
+      },
+      select: { vendedorId: true },
+    });
+
+    const vendedoresConVentas = ventas.map((v) => v.vendedorId);
+    return this.prisma.vendedor.findMany({
+      where: {
+        id: { notIn: vendedoresConVentas },
+      },
+    });
+  }
+
+  async ventasPorClientePorAño(anios: number[]) {
+    const ventas = await this.prisma.venta.findMany({
+      include: {
+        cliente: true,
+        zona: true, 
+      },
+    });
+
+    const resultado = ventas.reduce(
+      (acc, venta) => {
+        const anio = new Date(venta.fecha).getFullYear();
+        if (!anios.includes(anio)) return acc;
+
+        const key = venta.clienteId;
+
+        if (!acc[key]) {
+          acc[key] = {
+            idCliente: venta.cliente.id,
+            nombreCliente: venta.cliente.nombre,
+            zona: venta.zona.nombre, 
+            ventas: {},
+          };
+        }
+
+        acc[key].ventas[anio] =
+          (acc[key].ventas[anio] || 0) + Number(venta.monto_total);
+
+        return acc;
+      },
+      {} as Record<number, any>,
+    );
+
+    return Object.values(resultado);
+  }
 }
