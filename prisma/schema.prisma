@@ -21,6 +21,7 @@ model Zona {
   id          Int      @id @default(autoincrement())
   nombre      String
   descripcion String?
+  activo      Boolean  @default(true)
   ventas      Venta[]
 }
 
