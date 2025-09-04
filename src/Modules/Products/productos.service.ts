@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/Prisma/prisma.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
@@ -17,7 +21,8 @@ export class ProductosService {
 
   async findOne(id: number) {
     const producto = await this.prisma.producto.findUnique({ where: { id } });
-    if (!producto || !producto.activo) throw new NotFoundException(`Producto ${id} no encontrado`);
+    if (!producto || !producto.activo)
+      throw new NotFoundException(`Producto ${id} no encontrado`);
     return producto;
   }
 
@@ -30,11 +35,18 @@ export class ProductosService {
   async remove(id: number) {
     const producto = await this.findOne(id);
 
-    const detalle = await this.prisma.detalleVenta.findFirst({ where: { productoId: id } });
+    const detalle = await this.prisma.detalleVenta.findFirst({
+      where: { productoId: id },
+    });
     if (detalle) {
-      throw new BadRequestException(`No se puede borrar el producto ${id} porque tiene ventas asociadas`);
+      throw new BadRequestException(
+        `No se puede borrar el producto ${id} porque tiene ventas asociadas`,
+      );
     }
 
-    return this.prisma.producto.update({ where: { id }, data: { activo: false } });
+    return this.prisma.producto.update({
+      where: { id },
+      data: { activo: false },
+    });
   }
 }
