@@ -13,14 +13,15 @@ model Cliente {
   email     String   @unique
   telefono  String?
   direccion String?
-  ventas    Venta[] 
+  activo    Boolean  @default(true)  // para soft delete
+  ventas    Venta[]
 }
 
 model Zona {
-  id        Int      @id @default(autoincrement())
-  nombre    String
+  id          Int      @id @default(autoincrement())
+  nombre      String
   descripcion String?
-  ventas    Venta[]
+  ventas      Venta[]
 }
 
 model Producto {
@@ -42,27 +43,27 @@ model Vendedor {
 }
 
 model Venta {
-  id          Int             @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   clienteId   Int
   vendedorId  Int
   zonaId      Int
-  fecha       DateTime        @default(now())
+  fecha       DateTime  @default(now())
   monto_total Decimal
 
-  cliente     Cliente  @relation(fields: [clienteId], references: [id])
-  vendedor    Vendedor @relation(fields: [vendedorId], references: [id])
-  zona        Zona     @relation(fields: [zonaId], references: [id])
+  cliente     Cliente   @relation(fields: [clienteId], references: [id])
+  vendedor    Vendedor  @relation(fields: [vendedorId], references: [id])
+  zona        Zona      @relation(fields: [zonaId], references: [id])
   detalles    DetalleVenta[]
 }
 
 model DetalleVenta {
-  id            Int      @id @default(autoincrement())
-  ventaId       Int
-  productoId    Int
-  cantidad      Int
+  id             Int      @id @default(autoincrement())
+  ventaId        Int
+  productoId     Int
+  cantidad       Int
   precio_unitario Decimal
-  subtotal      Decimal
+  subtotal       Decimal
 
-  venta         Venta    @relation(fields: [ventaId], references: [id])
-  producto      Producto @relation(fields: [productoId], references: [id])
+  venta    Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  producto Producto @relation(fields: [productoId], references: [id])
 }
