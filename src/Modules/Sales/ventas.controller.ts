@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, ParseIntPipe,Patch, Delete} from '@nestjs/common';
 import { VentasService } from './ventas.service';
 import { CreateVentaDto } from './dto/create-venta.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
