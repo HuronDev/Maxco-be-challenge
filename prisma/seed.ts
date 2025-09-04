@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Iniciando seeder...');
+  console.log('🌱 Iniciando seeder de repuestos de autos...');
 
   // Crear Zonas
   const zonaCentro = await prisma.zona.create({
@@ -14,74 +14,90 @@ async function main() {
   });
 
   // Crear Vendedores
-  const vendedorJuan = await prisma.vendedor.create({
-    data: { nombre: 'Juan Pérez', email: 'juan@empresa.com', telefono: '0991111111' },
+  const vendedorCarlos = await prisma.vendedor.create({
+    data: { nombre: 'Carlos Ramírez', email: 'carlos@empresa.com', telefono: '0993333333' },
   });
-  const vendedorMaria = await prisma.vendedor.create({
-    data: { nombre: 'María López', email: 'maria@empresa.com', telefono: '0992222222' },
+  const vendedorLucia = await prisma.vendedor.create({
+    data: { nombre: 'Lucía Fernández', email: 'lucia@empresa.com', telefono: '0994444444' },
   });
 
   // Crear Clientes
-  const clienteAna = await prisma.cliente.create({
+  const clientePedro = await prisma.cliente.create({
     data: {
-      nombre: 'Ana Torres',
-      email: 'ana@gmail.com',
-      telefono: '0981111111',
-      direccion: 'Av. Siempre Viva 123',
+      nombre: 'Pedro Gómez',
+      email: 'pedro@gmail.com',
+      telefono: '0983333333',
+      direccion: 'Av. Principal 789',
     },
   });
 
-  const clienteLuis = await prisma.cliente.create({
+  const clienteSofia = await prisma.cliente.create({
     data: {
-      nombre: 'Luis Martínez',
-      email: 'luis@gmail.com',
-      telefono: '0982222222',
-      direccion: 'Calle Falsa 456',
+      nombre: 'Sofía Herrera',
+      email: 'sofia@gmail.com',
+      telefono: '0984444444',
+      direccion: 'Calle Secundaria 321',
     },
   });
 
-  // Crear Productos
-  const productoLaptop = await prisma.producto.create({
+  // Crear Productos (Repuestos de autos)
+  const productoAceite = await prisma.producto.create({
     data: {
-      nombre: 'Laptop Lenovo',
-      descripcion: 'Laptop de 15 pulgadas',
-      precio: 850.50,
-      stock: 10,
-      categoria: 'Electrónica',
+      nombre: 'Aceite de Motor Castrol 5W-30',
+      descripcion: 'Aceite sintético para motores a gasolina',
+      precio: 35.99,
+      stock: 100,
+      categoria: 'Lubricantes',
     },
   });
 
-  const productoMouse = await prisma.producto.create({
+  const productoFiltro = await prisma.producto.create({
     data: {
-      nombre: 'Mouse Logitech',
-      descripcion: 'Mouse inalámbrico',
-      precio: 25.99,
-      stock: 50,
-      categoria: 'Accesorios',
+      nombre: 'Filtro de Aire Toyota Corolla',
+      descripcion: 'Filtro de aire original para Toyota Corolla 2015-2020',
+      precio: 15.5,
+      stock: 40,
+      categoria: 'Filtros',
+    },
+  });
+
+  const productoPastillas = await prisma.producto.create({
+    data: {
+      nombre: 'Pastillas de Freno Brembo',
+      descripcion: 'Juego de pastillas de freno delanteras',
+      precio: 60.0,
+      stock: 25,
+      categoria: 'Frenos',
     },
   });
 
   // Crear Ventas con Detalles
   const venta1 = await prisma.venta.create({
     data: {
-      clienteId: clienteAna.id,
-      vendedorId: vendedorJuan.id,
+      clienteId: clientePedro.id,
+      vendedorId: vendedorCarlos.id,
       zonaId: zonaCentro.id,
-      fecha: new Date('2023-06-15'),
-      monto_total: 876.49,
+      fecha: new Date('2024-08-10'),
+      monto_total: 95.49,
       detalles: {
         create: [
           {
-            productoId: productoLaptop.id,
+            productoId: productoAceite.id,
             cantidad: 1,
-            precio_unitario: 850.50,
-            subtotal: 850.50,
+            precio_unitario: 35.99,
+            subtotal: 35.99,
           },
           {
-            productoId: productoMouse.id,
+            productoId: productoFiltro.id,
             cantidad: 1,
-            precio_unitario: 25.99,
-            subtotal: 25.99,
+            precio_unitario: 15.5,
+            subtotal: 15.5,
+          },
+          {
+            productoId: productoPastillas.id,
+            cantidad: 1,
+            precio_unitario: 60.0,
+            subtotal: 60.0,
           },
         ],
       },
@@ -90,30 +106,30 @@ async function main() {
 
   const venta2 = await prisma.venta.create({
     data: {
-      clienteId: clienteLuis.id,
-      vendedorId: vendedorMaria.id,
+      clienteId: clienteSofia.id,
+      vendedorId: vendedorLucia.id,
       zonaId: zonaNorte.id,
-      fecha: new Date('2023-07-20'),
-      monto_total: 25.99,
+      fecha: new Date('2024-09-05'),
+      monto_total: 35.99,
       detalles: {
         create: [
           {
-            productoId: productoMouse.id,
+            productoId: productoAceite.id,
             cantidad: 1,
-            precio_unitario: 25.99,
-            subtotal: 25.99,
+            precio_unitario: 35.99,
+            subtotal: 35.99,
           },
         ],
       },
     },
   });
 
-  console.log('✅ Seeder ejecutado con éxito');
+  console.log('✅ Seeder ejecutado con éxito (repuestos de autos)');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Error ejecutando el seeder:', e);
     process.exit(1);
   })
   .finally(async () => {

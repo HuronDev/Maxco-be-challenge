@@ -26,15 +26,16 @@ model Zona {
 }
 
 model Producto {
-  id          Int            @id @default(autoincrement())
-  nombre      String
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
   descripcion String?
   precio      Decimal
   stock       Int
   categoria   String?
-  activo      Boolean        @default(true)
+  activo      Boolean  @default(true)
   detalles    DetalleVenta[]
 }
+
 
 model Vendedor {
   id       Int     @id @default(autoincrement())

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/Prisma/prisma.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
@@ -10,8 +11,15 @@ import { UpdateProductoDto } from './dto/update-producto.dto';
 @Injectable()
 export class ProductosService {
   constructor(private prisma: PrismaService) {}
-
   async create(data: CreateProductoDto) {
+    const existe = await this.prisma.producto.findUnique({
+      where: { nombre: data.nombre },
+    });
+
+    if (existe) {
+      throw new ConflictException(`El producto "${data.nombre}" ya existe`);
+    }
+
     return this.prisma.producto.create({ data });
   }
 
