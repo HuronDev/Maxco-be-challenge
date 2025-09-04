@@ -8,62 +8,63 @@ datasource db {
 }
 
 model Cliente {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   nombre    String
-  email     String   @unique
+  email     String  @unique
   telefono  String?
   direccion String?
-  activo    Boolean  @default(true)  // para soft delete
+  activo    Boolean @default(true) // para soft delete
   ventas    Venta[]
 }
 
 model Zona {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   nombre      String
   descripcion String?
-  activo      Boolean  @default(true)
+  activo      Boolean @default(true)
   ventas      Venta[]
 }
 
 model Producto {
-  id          Int             @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   nombre      String
   descripcion String?
   precio      Decimal
   stock       Int
   categoria   String?
+  activo      Boolean        @default(true)
   detalles    DetalleVenta[]
 }
 
 model Vendedor {
-  id       Int      @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   nombre   String
-  email    String   @unique
+  email    String  @unique
   telefono String?
   ventas   Venta[]
 }
 
 model Venta {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   clienteId   Int
   vendedorId  Int
   zonaId      Int
-  fecha       DateTime  @default(now())
+  fecha       DateTime @default(now())
   monto_total Decimal
 
-  cliente     Cliente   @relation(fields: [clienteId], references: [id])
-  vendedor    Vendedor  @relation(fields: [vendedorId], references: [id])
-  zona        Zona      @relation(fields: [zonaId], references: [id])
-  detalles    DetalleVenta[]
+  cliente  Cliente        @relation(fields: [clienteId], references: [id])
+  vendedor Vendedor       @relation(fields: [vendedorId], references: [id])
+  zona     Zona           @relation(fields: [zonaId], references: [id])
+  detalles DetalleVenta[]
 }
 
 model DetalleVenta {
-  id             Int      @id @default(autoincrement())
-  ventaId        Int
-  productoId     Int
-  cantidad       Int
+  id              Int     @id @default(autoincrement())
+  ventaId         Int
+  productoId      Int
+  cantidad        Int
   precio_unitario Decimal
-  subtotal       Decimal
+  subtotal        Decimal
 
   venta    Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
   producto Producto @relation(fields: [productoId], references: [id])
