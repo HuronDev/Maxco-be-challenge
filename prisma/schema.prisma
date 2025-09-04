@@ -38,10 +38,11 @@ model Producto {
 
 
 model Vendedor {
-  id       Int     @id @default(autoincrement())
+  id       Int      @id @default(autoincrement())
   nombre   String
-  email    String  @unique
+  email    String   @unique
   telefono String?
+  activo   Boolean  @default(true) // <-- nuevo
   ventas   Venta[]
 }
 
