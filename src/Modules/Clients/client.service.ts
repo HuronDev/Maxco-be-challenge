@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateClienteDto } from './dto/create-client.dto';
 import { UpdateClienteDto } from './dto/update-client.dto';
 import { PrismaService } from 'src/Prisma/prisma.service';
@@ -12,22 +12,28 @@ export class ClientesService {
   }
 
   async findAll() {
-    return this.prisma.cliente.findMany();
+    return this.prisma.cliente.findMany({ where: { activo: true } });
   }
 
   async findOne(id: number) {
     const cliente = await this.prisma.cliente.findUnique({ where: { id } });
-    if (!cliente) throw new NotFoundException(`Cliente ${id} no encontrado`);
+    if (!cliente || !cliente.activo) throw new NotFoundException(`Cliente ${id} no encontrado`);
     return cliente;
   }
 
   async update(id: number, data: UpdateClienteDto) {
-    await this.findOne(id); // validar existencia
+    await this.findOne(id);
     return this.prisma.cliente.update({ where: { id }, data });
   }
 
   async remove(id: number) {
-    await this.findOne(id); // validar existencia
-    return this.prisma.cliente.delete({ where: { id } });
+    const cliente = await this.findOne(id);
+
+    const ventas = await this.prisma.venta.findFirst({ where: { clienteId: id } });
+    if (ventas) {
+      throw new BadRequestException(`No se puede borrar el cliente ${id} porque tiene ventas asociadas`);
+    }
+
+    return this.prisma.cliente.update({ where: { id }, data: { activo: false } });
   }
 }
