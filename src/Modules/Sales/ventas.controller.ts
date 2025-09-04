@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Param, Body, ParseIntPipe,Patch, Delete} from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  ParseIntPipe,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { VentasService } from './ventas.service';
 import { CreateVentaDto } from './dto/create-venta.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -16,7 +25,9 @@ export class VentasController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar todas las ventas con detalles, cliente, vendedor y zona' })
+  @ApiOperation({
+    summary: 'Listar todas las ventas con detalles, cliente, vendedor y zona',
+  })
   findAll() {
     return this.ventasService.findAll();
   }
@@ -26,5 +37,9 @@ export class VentasController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ventasService.findOne(id);
   }
+  
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.ventasService.remove(id);
+  }
 }
-
