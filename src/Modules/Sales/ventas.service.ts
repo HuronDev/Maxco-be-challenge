@@ -12,41 +12,35 @@ export class VentasService {
         const producto = await this.prisma.producto.findUnique({
           where: { id: d.productoId },
         });
-        if (!producto) {
+        if (!producto)
           throw new NotFoundException(`Producto ${d.productoId} no encontrado`);
-        }
 
-        const precioUnitario = Number(producto.precio);
-        const subtotal = precioUnitario * d.cantidad;
+        const subtotal = Number(producto.precio) * d.cantidad;
 
         return {
           productoId: d.productoId,
           cantidad: d.cantidad,
-          precio_unitario: precioUnitario,
+          precio_unitario: Number(producto.precio),
           subtotal,
         };
       }),
     );
 
-    // Calculamos el monto total de la venta
-    const monto_total = detallesConPrecio.reduce((sum, d) => sum + d.subtotal, 0);
+    const monto_total = detallesConPrecio.reduce(
+      (sum, d) => sum + d.subtotal,
+      0,
+    );
 
-    // Creamos la venta con los detalles calculados
     return this.prisma.venta.create({
       data: {
         clienteId: data.clienteId,
         vendedorId: data.vendedorId,
         zonaId: data.zonaId,
-        fecha: data.fecha ? new Date(data.fecha) : new Date(),
+        fecha: new Date(data.fecha),
         monto_total,
         detalles: { create: detallesConPrecio },
       },
-      include: {
-        detalles: true,
-        cliente: true,
-        vendedor: true,
-        zona: true,
-      },
+      include: { detalles: true, cliente: true, vendedor: true, zona: true },
     });
   }
 
@@ -57,13 +51,9 @@ export class VentasService {
   }
 
   async findOne(id: number) {
-    const venta = await this.prisma.venta.findUnique({
+    return this.prisma.venta.findUnique({
       where: { id },
       include: { detalles: true, cliente: true, vendedor: true, zona: true },
     });
-
-    if (!venta) throw new NotFoundException(`Venta ${id} no encontrada`);
-
-    return venta;
   }
 }
