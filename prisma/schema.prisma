@@ -10,10 +10,10 @@ datasource db {
 model Cliente {
   id        Int     @id @default(autoincrement())
   nombre    String
-  email     String  @unique
+  email     String  
   telefono  String?
   direccion String?
-  activo    Boolean @default(true) // para soft delete
+  activo    Boolean @default(true) 
   ventas    Venta[]
 }
 
@@ -42,7 +42,7 @@ model Vendedor {
   nombre   String
   email    String   @unique
   telefono String?
-  activo   Boolean  @default(true) // <-- nuevo
+  activo   Boolean  @default(true) 
   ventas   Venta[]
 }
 
