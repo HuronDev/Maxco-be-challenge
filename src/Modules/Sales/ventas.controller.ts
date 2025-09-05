@@ -11,7 +11,15 @@ import {
 } from '@nestjs/common';
 import { VentasService } from './ventas.service';
 import { CreateVentaDto } from './dto/create-venta.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiBody,
+  ApiParam,
+} from '@nestjs/swagger';
+import { UpdateCantidadDto } from './dto/update-cantidad.dto';
 
 @ApiTags('Ventas')
 @Controller('ventas')
@@ -19,27 +27,62 @@ export class VentasController {
   constructor(private readonly ventasService: VentasService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Crear una nueva venta con detalles' })
-  @ApiResponse({ status: 201, description: 'Venta creada correctamente' })
-  create(@Body() data: CreateVentaDto) {
-    return this.ventasService.create(data);
+  @ApiOperation({ summary: 'Crear una nueva venta' })
+  @ApiBody({ type: CreateVentaDto })
+  @ApiResponse({ status: 201, description: 'Venta creada correctamente.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Cliente, vendedor, zona o producto no encontrado.',
+  })
+  async create(@Body() createVentaDto: CreateVentaDto) {
+    return this.ventasService.create(createVentaDto);
   }
 
   @Get()
-  @ApiOperation({
-    summary: 'Listar todas las ventas con detalles, cliente, vendedor y zona',
-  })
+  @ApiOperation({ summary: 'Listar todas las ventas con detalles desglosados' })
+  @ApiResponse({ status: 200, description: 'Listado de ventas exitoso.' })
+  @ApiResponse({ status: 404, description: 'No se encontraron ventas.' })
   findAll() {
     return this.ventasService.findAll();
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Obtener una venta específica por ID' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.ventasService.findOne(id);
+  @Patch(':ventaId/deta lles/:productoId/cantidad')
+  @ApiOperation({
+    summary: 'Actualizar la cantidad de un producto en una venta',
+  })
+  @ApiParam({ name: 'ventaId', description: 'ID de la venta', example: 1 })
+  @ApiParam({
+    name: 'productoId',
+    description: 'ID del producto en la venta',
+    example: 3,
+  })
+  @ApiBody({ type: UpdateCantidadDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Cantidad y subtotal actualizados correctamente.',
+  })
+  @ApiResponse({ status: 404, description: 'Venta o detalle no encontrado.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Stock insuficiente para el producto.',
+  })
+  async updateCantidad(
+    @Param('ventaId', ParseIntPipe) ventaId: number,
+    @Param('productoId', ParseIntPipe) productoId: number,
+    @Body() updateCantidadDto: UpdateCantidadDto,
+  ) {
+    return this.ventasService.updateCantidadDetalle(
+      ventaId,
+      productoId,
+      updateCantidadDto.cantidad,
+    );
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar una venta y todos sus detalles' })
+  @ApiParam({ name: 'id', description: 'ID de la venta', example: 1 })
+  @ApiResponse({ status: 200, description: 'Venta eliminada correctamente.' })
+  @ApiResponse({ status: 404, description: 'Venta no encontrada.' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.ventasService.remove(id);
   }
@@ -53,24 +96,25 @@ export class VentasController {
     return this.ventasService.zonasConMasVentasPorVendedor();
   }
 
-  @Get('sin-ventas')
-  @ApiQuery({
-    name: 'inicio',
-    type: String,
-    description: 'Fecha de inicio en formato YYYY-MM-DD',
+  @Get('zonas-sin-ventas')
+  @ApiOperation({
+    summary: 'Listado de zonas sin ventas en un rango de fechas',
   })
-  @ApiQuery({
-    name: 'fin',
-    type: String,
-    description: 'Fecha de fin en formato YYYY-MM-DD',
+  @ApiQuery({ name: 'fechaInicio', type: String, example: '2025-01-01' })
+  @ApiQuery({ name: 'fechaFin', type: String, example: '2025-12-31' })
+  @ApiResponse({
+    status: 200,
+    description: 'Listado de zonas sin ventas en ese rango de fechas',
   })
-  async getZonasSinVentas(
-    @Query('inicio') inicio: string,
-    @Query('fin') fin: string,
+  async zonasSinVentas(
+    @Query('fechaInicio') fechaInicio: string,
+    @Query('fechaFin') fechaFin: string,
   ) {
-    return this.ventasService.zonasSinVentas(inicio, fin);
+    return this.ventasService.zonasSinVentas(fechaInicio, fechaFin);
   }
 
+
+  
   @Get('vendedores-sin-ventas')
   @ApiOperation({
     summary:

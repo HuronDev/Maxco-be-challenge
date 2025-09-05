@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/Prisma/prisma.service';
 import { CreateVentaDto } from './dto/create-venta.dto';
 
@@ -14,8 +18,18 @@ export class VentasService {
         });
         if (!producto)
           throw new NotFoundException(`Producto ${d.productoId} no encontrado`);
+        if (producto.stock < d.cantidad) {
+          throw new BadRequestException(
+            `No hay suficiente stock para el producto ${producto.nombre}`,
+          );
+        }
 
         const subtotal = Number(producto.precio) * d.cantidad;
+
+        await this.prisma.producto.update({
+          where: { id: d.productoId },
+          data: { stock: producto.stock - d.cantidad },
+        });
 
         return {
           productoId: d.productoId,
@@ -45,68 +59,89 @@ export class VentasService {
   }
 
   async findAll() {
-    return this.prisma.venta.findMany({
-      include: { detalles: true, cliente: true, vendedor: true, zona: true },
-    });
-  }
-
-  async findOne(id: number) {
-    return this.prisma.venta.findUnique({
-      where: { id },
-      include: { detalles: true, cliente: true, vendedor: true, zona: true },
-    });
-  }
-
-  async update(id: number, data: CreateVentaDto) {
-    const ventaExistente = await this.prisma.venta.findUnique({
-      where: { id },
-      include: { detalles: true },
-    });
-    if (!ventaExistente)
-      throw new NotFoundException(`Venta ${id} no encontrada`);
-
-    await this.prisma.detalleVenta.deleteMany({
-      where: { ventaId: id },
+    const ventas = await this.prisma.venta.findMany({
+      include: {
+        detalles: { include: { producto: true } },
+        cliente: true,
+        vendedor: true,
+        zona: true,
+      },
+      orderBy: { fecha: 'desc' },
     });
 
-    const detallesConPrecio = await Promise.all(
-      data.detalles.map(async (d) => {
-        const producto = await this.prisma.producto.findUnique({
-          where: { id: d.productoId },
-        });
-        if (!producto)
-          throw new NotFoundException(`Producto ${d.productoId} no encontrado`);
-
-        const subtotal = Number(producto.precio) * d.cantidad;
-        return {
-          productoId: d.productoId,
-          cantidad: d.cantidad,
-          precio_unitario: Number(producto.precio),
-          subtotal,
-        };
-      }),
+    const resultado = ventas.flatMap((venta) =>
+      venta.detalles.map((detalle) => ({
+        ventaId: venta.id,
+        cliente: venta.cliente.nombre,
+        vendedor: venta.vendedor.nombre,
+        zona: venta.zona.nombre,
+        fecha: venta.fecha.toISOString().split('T')[0],
+        productoId: detalle.productoId,
+        producto: detalle.producto.nombre,
+        cantidad: detalle.cantidad,
+        precio_unitario: Number(detalle.precio_unitario),
+        subtotal: Number(detalle.subtotal),
+      })),
     );
 
-    const monto_total = detallesConPrecio.reduce(
-      (sum, d) => sum + d.subtotal,
+    return resultado;
+  }
+
+  async updateCantidadDetalle(
+    ventaId: number,
+    productoId: number,
+    nuevaCantidad: number,
+  ) {
+    const detalle = await this.prisma.detalleVenta.findFirst({
+      where: { ventaId, productoId },
+      include: { producto: true },
+    });
+
+    if (!detalle)
+      throw new NotFoundException(
+        `Detalle de producto ${productoId} no encontrado en la venta ${ventaId}`,
+      );
+
+    const deltaCantidad = nuevaCantidad - detalle.cantidad;
+    if (deltaCantidad > 0 && detalle.producto.stock < deltaCantidad) {
+      throw new BadRequestException(
+        `Stock insuficiente para el producto ${detalle.producto.nombre}`,
+      );
+    }
+
+    const nuevoSubtotal = Number(detalle.producto.precio) * nuevaCantidad;
+    await this.prisma.detalleVenta.update({
+      where: { id: detalle.id },
+      data: {
+        cantidad: nuevaCantidad,
+        subtotal: nuevoSubtotal,
+      },
+    });
+    await this.prisma.producto.update({
+      where: { id: productoId },
+      data: {
+        stock: { decrement: deltaCantidad },
+      },
+    });
+    const detalles = await this.prisma.detalleVenta.findMany({
+      where: { ventaId },
+    });
+    const monto_total = detalles.reduce(
+      (sum, d) => sum + Number(d.subtotal),
       0,
     );
 
     return this.prisma.venta.update({
-      where: { id },
-      data: {
-        clienteId: data.clienteId,
-        vendedorId: data.vendedorId,
-        zonaId: data.zonaId,
-        fecha: new Date(data.fecha),
-        monto_total,
-        detalles: { create: detallesConPrecio },
-      },
-      include: { detalles: true, cliente: true, vendedor: true, zona: true },
+      where: { id: ventaId },
+      data: { monto_total },
     });
   }
 
   async remove(id: number) {
+    const venta = await this.prisma.venta.findUnique({ where: { id } });
+    if (!venta) {
+      throw new NotFoundException(`Venta con ID ${id} no encontrada`);
+    }
     await this.prisma.detalleVenta.deleteMany({ where: { ventaId: id } });
     return this.prisma.venta.delete({ where: { id } });
   }
@@ -141,7 +176,7 @@ export class VentasService {
   }
 
   async zonasSinVentas(fechaInicio: string, fechaFin: string) {
-    const zonas = await this.prisma.zona.findMany({
+    return this.prisma.zona.findMany({
       where: {
         ventas: {
           none: {
@@ -153,10 +188,10 @@ export class VentasService {
         },
       },
     });
-
-    return zonas;
   }
 
+
+  
   async vendedoresSinVentas(fechaInicio: string, fechaFin: string) {
     const ventas = await this.prisma.venta.findMany({
       where: {
@@ -180,7 +215,7 @@ export class VentasService {
     const ventas = await this.prisma.venta.findMany({
       include: {
         cliente: true,
-        zona: true, 
+        zona: true,
       },
     });
 
@@ -195,7 +230,7 @@ export class VentasService {
           acc[key] = {
             idCliente: venta.cliente.id,
             nombreCliente: venta.cliente.nombre,
-            zona: venta.zona.nombre, 
+            zona: venta.zona.nombre,
             ventas: {},
           };
         }
