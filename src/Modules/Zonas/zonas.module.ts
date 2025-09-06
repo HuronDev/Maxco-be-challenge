@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ZonasService } from './zonas.service';
 import { ZonasController } from './zonas.controller';
-import { PrismaService } from 'src/Prisma/prisma.service';
+import { PrismaService } from '../../Prisma/prisma.service';
 
 @Module({
   controllers: [ZonasController],
