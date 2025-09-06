@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateZonaDto } from './dto/create-zona.dto';
 import { UpdateZonaDto } from './dto/update-zona.dto';
-import { PrismaService } from 'src/Prisma/prisma.service';
+import { PrismaService } from '../../Prisma/prisma.service';
 
 @Injectable()
 export class ZonasService {
